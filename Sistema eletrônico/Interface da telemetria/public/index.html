@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANDACARU BAJA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a class="logo" href="">MANDACARU BAJA</a>
+        </nav>
+    </header>
+    <div class="container">
+        <div class="info"><h2 class="texto_status">temperatura do motor</h2><span class="info_nmr" id="motor">00000</span></div>
+        <div class="info"><h2 class="texto_status">temperatura da CVT</h2><span class="info_nmr" id="cvt">00000</span></div>
+        <div class="info"><h2 class="texto_status">combustivel consumido</h2><span class="info_nmr" id="consumo">00000</span></div>
+        <div class="info"><h2 class="texto_status">RPM</h2><span class="info_nmr" id="rpm">00000</span></div>
+    </div>
+    <div class="container1">
+        <div class="grafico_motor"><h2 class="texto_status">gráfico temperatura do motor</h2><canvas id="graf-motor"></canvas></div>
+        <div class="vel"><h2 class="texto_status">Velocímetro</h2>
+            <div class="gauge_vel">
+                <div id="gauge">
+                    <div id="major-ticks"><span class="valor-vel">00</span><span class="valor-vel">30</span><span class="valor-vel">60</span></div>
+                    <div id="minor-ticks"></div>
+                    <div id="minor-ticks-bottom-mask"></div>
+                    <div id="bottom-circle"></div>
+                    <svg version="1.1" baseProfile="full" width="190" height="190">
+                        <linearGradient id="gradient" x1="0" x2="1" y1="0" y2="0">
+                            <stop offset="0%" stop-color="#00ff00"/><stop offset="100%" stop-color="#bb1a05"/>
+                        </linearGradient>
+                        <path d="M5 95 A80 80 0 0 1 185 95" stroke="url(#gradient)" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 282.78"/>
+                    </svg>
+                    <div id="center-circle"><span id="name">KM/H</span><span id="nmr-vel">10</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="grafico_cvt"><h2 class="texto_status">gráfico temperatura da cvt</h2><canvas id="graf-cvt"></canvas></div>
+        <div class="status_tanque"><h2 class="texto_status">Tanque de combustivel</h2>
+            <div class="barra-comb">
+                <div class="bar-comb"><div class="comb-tip"></div>
+                    <div class="progress-bar"><span id="comb_num">10</span><span class="symbol">%</span>
+                        <div class="progress" id="progress"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ws = new WebSocket('wss://reposit-rio.onrender.com');
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            document.getElementById("motor").innerHTML = data.temp_motor;
+            document.getElementById("cvt").innerHTML = data.temp_cvt;
+            document.getElementById("consumo").innerHTML = data.combustivel_consumido;
+            document.getElementById("rpm").innerHTML = data.rpm;
+            document.getElementById("nmr-vel").innerHTML = data.velocidade;
+            document.getElementById("comb_num").innerHTML = data.combustivel;
+
+            chart.data.labels = [...data.time_array];
+            chart.data.datasets[0].data = [...data.temp_motor_array];
+            chart.update();
+
+            chart2.data.labels = [...data.time_array];
+            chart2.data.datasets[0].data = [...data.temp_cvt_array];
+            chart2.update();
+
+            progress.style.height = `${data.combustivel}%`;
+
+            const arc = document.querySelector("svg path");
+            const arc_length = arc.getTotalLength();
+            const step = arc_length / 60;
+            const value = Math.min(data.velocidade * step, arc_length);
+            arc.style.strokeDasharray = `${value} ${arc_length - value}`;
+        };
+
+        const ctx = document.getElementById('graf-motor');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: '', data: [], borderWidth: 1, borderColor: '#00ff00', backgroundColor: '#00ff00' }] },
+            options: { scales: { y: { beginAtZero: true } } }
+        });
+
+        const ctx2 = document.getElementById('graf-cvt');
+        const chart2 = new Chart(ctx2, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: '', data: [], borderWidth: 1, borderColor: '#00ff00', backgroundColor: '#00ff00' }] },
+            options: { scales: { y: { beginAtZero: true } } }
+        });
+
+        const progress = document.getElementById('progress');
+    </script>
+</body>
+</html>
